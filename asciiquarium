@@ -49,6 +49,7 @@ use warnings;
 my $version = "1.1";
 
 my @random_objects = init_random_objects();
+my $water_line = 15;
 
 # the Z depth at which certain items occur
 my %depth = (
@@ -88,7 +89,7 @@ sub main {
 
 	$anim->color(1);
 
-	my $start_time = time;
+	my $start_time = 0;
 	my $paused = 0;
 	while(1) {
 
@@ -97,6 +98,11 @@ sub main {
 		add_all_seaweed($anim);
 		add_all_fish($anim);
 		random_object(undef, $anim);
+		add_rev_bottle(undef, $anim);
+		add_ship(undef, $anim);
+		add_ufo(undef, $anim);
+		add_submarine(undef, $anim);
+		add_diver(undef, $anim);
 		
 		$anim->redraw_screen();
 
@@ -116,6 +122,255 @@ sub main {
 
 	}
 
+}
+
+sub add_diver {
+	my ($old_ent, $anim) = @_;
+
+	my @diver_image = (	
+q{
+______          ______
+   ___\________(___||_)o* _
+  /    \______   Stego  )(_)O
+ /            '-o------\` ^ >
+                        \___|_|
+},
+q{
+         ______          ______
+    _ *o(_||___)________/___   
+  O(_)(  Stego   ______/    \  
+ > ^  `/------o-'            \ 
+|_|___/
+});
+
+	my @submarine_mask = (
+q{
+yyyyyy          bbbbbb
+   yyyybbbbbbbbbbbbbbbbbb b
+  y    bbbbbbb   mmmmm  bbbbb
+ y            bbbbbbbbbbb b b
+                        rrrrrrrr
+},
+q{
+         bbbbbb          yyyyyy
+    b bbbbbbbbbbbbbbbbbbyyyy   
+  bbbbb  mmmmm   bbbbbbb    y  
+ b b  bbbbbbbbbbb            y 
+rrrrrrrr
+});
+
+	my $dir = int(rand(2));
+	my $x = -24;
+	my $speed = 0.75;
+	if($dir) {
+		$speed *= -1;
+		$x = $anim->width()-2;
+	}
+
+	my $max_height = 4 + $water_line;
+	my $min_height = $anim->height() - 4;
+	my $y = int(rand($min_height - $max_height)) + $max_height;
+
+	$anim->new_entity(
+		color		=> $submarine_mask[$dir],
+		shape		=> $diver_image[$dir],
+		auto_trans	=> 1,
+		position	=> [ $x, $y, 15 ],
+		default_color	=> 'WHITE',
+		callback_args	=> [ $speed, 0, 0 ],
+		die_offscreen	=> 1,
+		death_cb	=> \&add_diver,
+	);
+}
+
+sub add_submarine {
+	my ($old_ent, $anim) = @_;
+
+	my @submarine_image = (	
+q{
+             |_
+        ____| ~|_____
+,_--~~~~    Misc --  )
+`'~~~~~~~~~~~~~~~~~~~
+},
+q{
+       |_
+ _____|~ |____       
+(  --  Misc   ~~~~--_,
+ ~~~~~~~~~~~~~~~~~~~'`  
+});
+
+	my @submarine_mask = (
+q{
+             yy
+        yyyyy yyyyyyy
+yyyyyyyy    mmmm yy  y
+yyyyyyyyyyyyyyyyyyyyy
+},
+q{
+       yy
+yyyyyyyy yyyyy       
+y  yy  mmmm   yyyyyyyy
+ yyyyyyyyyyyyyyyyyyyyy  
+});
+
+	my $dir = int(rand(2));
+	my $x = -24;
+	my $speed = 1;
+	if($dir) {
+		$speed *= -1;
+		$x = $anim->width()-2;
+	}
+
+	my $max_height = 4 + $water_line;
+	my $min_height = $anim->height() - 4;
+	my $y = int(rand($min_height - $max_height)) + $max_height;
+
+	$anim->new_entity(
+		color		=> $submarine_mask[$dir],
+		shape		=> $submarine_image[$dir],
+		auto_trans	=> 1,
+		position	=> [ $x, $y, 200 ],
+		default_color	=> 'WHITE',
+		callback_args	=> [ $speed, 0, 0 ],
+		die_offscreen	=> 1,
+		death_cb	=> \&add_submarine,
+	);
+}
+
+sub add_ufo {
+	my ($old_ent, $anim) = @_;
+
+	my @ufo_image = (	
+q{
+          _                 ( Hey did you here, )
+         /\\               ( Germany is going to )
+         \ \\  \__/ \__/  / ( win the ECSC 2021. )
+          \ \\ (oo) (oo) / 
+           \_\\/~~\_/~~\_
+          _.-~===========~-._
+         (___/_______________)
+            /  \_______/
+ ( Yeah, they ) 
+( can't loose. )
+},
+q{
+   ( Hey did you here, )                _
+  ( Germany is going to )              //\
+  ( win the ECSC 2021. )\  \__/ \__/  // /
+                         \ (oo) (oo) // /
+                           /~~\_/~~\//_/
+                       _.-~===========~-._
+                      (______________\____)
+                            \_______/ \
+                                  ( Yeah, they ) 
+                                 ( can't loose. )
+});
+
+	my @ship_mask = (
+q{
+          b                 w mmmmmmmmmmmmmmmmm w
+         bbb               wmmmmmmmmmmmmmmmmmmmm w
+         b bb gggggggggg  w wmmmmmmmmmmmmmmmmmmm w
+          b bbgggggggggg w 
+           bbbgggggggggg
+          bbbbbbbbbbbbbbbbbbb
+         bbbbwbbbbbbbbbbbbbbbb
+            w  bbbbbbbbb
+ w mmmmmmmmmm w 
+w mmmmmmmmmmmm w
+},
+q{
+   w mmmmmmmmmmmmmmmmm w                b
+  wmmmmmmmmmmmmmmmmmmmm w              bbb
+  wmmmmmmmmmmmmmmmmmmmw w  gggggggggggbb b
+                         w ggggggggggbb b
+                           gggggggggbbbb
+                       bbbbbbbbbbbbbbbbbbb
+                      bbbbbbbbbbbbbbbwbbbbb
+                            bbbbbbbbb w
+                                  w mmmmmmmmmm w 
+                                 w mmmmmmmmmmmm w
+});
+
+	my $dir = int(rand(2));
+	my $x = -24;
+	my $speed = 1;
+	if($dir) {
+		$speed *= -1;
+		$x = $anim->width()-2;
+	}
+
+	$anim->new_entity(
+		color		=> $ship_mask[$dir],
+		shape		=> $ufo_image[$dir],
+		auto_trans	=> 1,
+		position	=> [ $x, 1, 0 ],
+		default_color	=> 'WHITE',
+		callback_args	=> [ $speed, 0, 0 ],
+		die_offscreen	=> 1,
+		death_cb	=> \&add_ufo,
+	);
+}
+
+sub add_rev_bottle {
+	my ($old_bottle, $anim) = @_;
+	my $bottle_image = q{
+   _
+  : :
+  : :
+  : :
+.'   '.
+:_____:
+|     |
+|  R  | 
+|  E  |
+|  V  |
+|_____|
+:_____:
+};
+	my $bottle_mask = q{
+   g
+  g g
+  g g
+  g g
+gg   gg
+ggggggg
+g     g
+g  r  g 
+g  r  g
+g  r  g
+ggggggg
+ggggggg
+};
+	
+	my $depth = 8;
+	my $x = 10 + ( int(rand($anim->width() - 20)) );
+
+	my $bottle_object = Term::Animation::Entity->new(
+		type		=> 'bottle_rev',
+		shape		=> $bottle_image,
+		auto_trans	=> 1,
+		color		=> $bottle_mask,
+		position	=> [ $x, -12, $depth ],
+		callback	=> \&bottle_rev_callback,
+		die_offscreen	=> 1,
+		physical	=> 1,
+	);
+
+	$anim->add_entity($bottle_object);
+}
+
+sub bottle_rev_callback {
+	my ($bottle, $anim) = @_;
+
+	my @pos = $bottle->position;
+	
+	if( ( $pos[1] + $bottle->height) < $anim->height) {
+		$pos[1] += .5;
+	}
+	
+	return @pos;
 }
 
 sub add_environment {
@@ -140,7 +395,7 @@ sub add_environment {
 			name		=> "water_seg_$i",
 			type		=> "waterline",
 			shape		=> $water_line_segment[$i],
-			position	=> [ 0, $i+5, $depth{'water_line'  . $i} ],
+			position	=> [ 0, $i+$water_line, $depth{'water_line'  . $i} ],
 			default_color	=> 'cyan',
 			depth		=> 22,
 			physical	=> 1,
@@ -158,8 +413,8 @@ sub add_castle {
  _   _   _  /     \  _   _   _
 [ ]_[ ]_[ ]/ _   _ \[ ]_[ ]_[ ]
 |_=__-_ =_|_[ ]_[ ]_|_=-___-__|
- | _- =  | =_ = _    |= _=   |
- |= -[]  |- = _ =    |_-=_[] |
+ | _- =  |   ANNO    |= _=   |
+ |= -[]  |   1999    |_-=_[] |
  | =_    |= - ___    | =_ =  |
  |=  []- |-  /| |\   |=_ =[] |
  |- =_   | =| | | |  |- = -  |
@@ -174,8 +429,8 @@ sub add_castle {
             y     y
            y       y
 
-
-
+             mmmm   
+             mmmm   
               yyy
              yy yy
             y y y y
@@ -269,7 +524,7 @@ sub add_all_fish {
 	my ($anim) = @_;
 	# figure out how many fish to add by the size of the screen,
 	# minus the stuff above the water
-	my $screen_size = ($anim->height() - 9) * $anim->width();
+	my $screen_size = ($anim->height() - (4 + $water_line)) * $anim->width();
 	my $fish_count = int($screen_size / 350);
 	for (1..$fish_count) {
 		add_fish(undef, $anim);
@@ -513,7 +768,7 @@ q{
 		coll_handler	=> \&fish_collision,
 	);
 
-	my $max_height = 9;
+	my $max_height = 4 + $water_line;
 	my $min_height = $anim->height() - $fish_object->{'HEIGHT'};
 	$fish_object->{'Y'} = int(rand($min_height - $max_height)) + $max_height;
 	if($fish_num % 2) {
@@ -655,7 +910,7 @@ q#
 
 	my $dir = int(rand(2));
 	my $x = -53;
-	my $y = int(rand($anim->height() - (10 + 9))) + 9;
+	my $y = int(rand($anim->height() - (10 + 9))) + 4 + $water_line;
 	my $teeth_x = -9;
 	my $teeth_y = $y + 7;
 	my $speed = 2;
@@ -809,7 +1064,7 @@ q{
    )___))___))___)\
   )____)____)_____)\\\
 _____|____|____|____\\\\\__
-\                   /
+\        D_K       /
 },
 q{
          |    |    |
@@ -817,7 +1072,7 @@ q{
       /(___((___((___(
     //(_____(____(____(
 __///____|____|____|_____
-    \                   /
+    \        D_K        /
 });
 
 	my @ship_mask = (
@@ -827,7 +1082,7 @@ q{
                   w
                    ww
 yyyyyyyyyyyyyyyyyyyywwwyy
-y                   y
+y        mmm        y
 },
 q{
          y    y    y
@@ -835,12 +1090,12 @@ q{
       w
     ww
 yywwwyyyyyyyyyyyyyyyyyyyy
-    y                   y
+    y        mmm        y
 });
 
 	my $dir = int(rand(2));
 	my $x = -24;
-	my $speed = 1;
+	my $speed = 1.5;
 	if($dir) {
 		$speed *= -1;
 		$x = $anim->width()-2;
@@ -850,11 +1105,11 @@ yywwwyyyyyyyyyyyyyyyyyyyy
 		color		=> $ship_mask[$dir],
 		shape		=> $ship_image[$dir],
 		auto_trans	=> 1,
-		position	=> [ $x, 0, $depth{'water_gap1'} ],
+		position	=> [ $x, $water_line - 5, $depth{'water_gap1'} ],
 		default_color	=> 'WHITE',
 		callback_args	=> [ $speed, 0, 0 ],
 		die_offscreen	=> 1,
-		death_cb	=> \&random_object,
+		death_cb	=> \&add_ship,
 	);
 }
 
@@ -962,7 +1217,7 @@ q{
 		color		=> \@whale_anim_mask,
 		shape		=> \@whale_anim,
 		auto_trans	=> 1,
-		position	=> [ $x, 0, $depth{'water_gap2'} ],
+		position	=> [ $x, $water_line - 5, $depth{'water_gap2'} ],
 		default_color	=> 'WHITE',
 		callback_args	=> [ $speed, 0, 0, 1 ],
 		die_offscreen	=> 1,
@@ -1058,7 +1313,7 @@ q{
 		shape		=> $monster_image[$dir],
 		auto_trans	=> 1,
 		color		=> \@monster_anim_mask,
-		position	=> [ $x, 2, $depth{'water_gap2'} ],
+		position	=> [ $x, 2 + $water_line - 5, $depth{'water_gap2'} ],
 		callback_args	=> [ $speed, 0, 0, .25 ],
 		death_cb	=> \&random_object,
 		die_offscreen	=> 1,
@@ -1145,7 +1400,7 @@ q{
 	} else {
 		$x = -34;
 	}
-	my $max_height = 9;
+	my $max_height = 4 + $water_line;
 	my $min_height = $anim->height() - 15;
 	my $y = int(rand($min_height - $max_height)) + $max_height;
 	my $color_mask = rand_color($big_fish_mask[$dir]);
@@ -1221,7 +1476,7 @@ ygcgwwwww  ygcgwwwww  ygcgwwwww
 		shape		=> $duck_image[$dir],
 		auto_trans	=> 1,
 		color		=> $duck_mask[$dir],
-		position	=> [ $x, 5, $depth{'water_gap3'} ],
+		position	=> [ $x, $water_line, $depth{'water_gap3'} ],
 		callback_args	=> [ $speed, 0, 0, .25 ],
 		death_cb	=> \&random_object,
 		die_offscreen	=> 1,
@@ -1304,7 +1559,7 @@ q{
 		shape		=> $dolphin_image[$dir],
 		auto_trans	=> 1,
 		color		=> $dolphin_mask[$dir],
-		position	=> [ $x - ($distance * 2), 8, $depth{'water_gap3'} ],
+		position	=> [ $x - ($distance * 2), 3 + $water_line, $depth{'water_gap3'} ],
 		callback_args	=> [ 0, [@path] ],
 		death_cb	=> \&random_object,
 		die_offscreen	=> 0,
@@ -1315,7 +1570,7 @@ q{
 		shape		=> $dolphin_image[$dir],
 		auto_trans	=> 1,
 		color		=> $dolphin_mask[$dir],
-		position	=> [ $x - $distance, 2, $depth{'water_gap3'} ],
+		position	=> [ $x - $distance, 2 + $water_line - 5, $depth{'water_gap3'} ],
 		callback_args	=> [ 12, [@path] ],
 		die_offscreen	=> 0,
 		default_color	=> 'BLUE',
@@ -1325,7 +1580,7 @@ q{
 		shape		=> $dolphin_image[$dir],
 		auto_trans	=> 1,
 		color		=> $dolphin_mask[$dir],
-		position	=> [ $x, 5, $depth{'water_gap3'} ],
+		position	=> [ $x, 5 + $water_line - 5, $depth{'water_gap3'} ],
 		callback_args	=> [ 24, [@path] ],
 		# have the lead dolphin tell the others to die offscreen, since they start offscreen
 		death_cb	=> sub{ $dolphin2->die_offscreen(1); $dolphin3->die_offscreen(1) },
@@ -1386,7 +1641,7 @@ yy
 		shape		=> $swan_image[$dir],
 		auto_trans	=> 1,
 		color		=> $swan_mask[$dir],
-		position	=> [ $x, 1, $depth{'water_gap3'} ],
+		position	=> [ $x, 1 + $water_line - 5, $depth{'water_gap3'} ],
 		callback_args	=> [ $speed, 0, 0, .25 ],
 		death_cb	=> \&random_object,
 		die_offscreen	=> 1,
@@ -1396,7 +1651,6 @@ yy
 
 sub init_random_objects {
 	return (
-		\&add_ship,
 		\&add_whale,
 		\&add_monster,
 		\&add_big_fish,
